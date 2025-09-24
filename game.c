@@ -1,7 +1,87 @@
+#define _USE_MATH_DEFINES
+#include <SDL2/SDL.h> 
 #include <stdio.h>
+#include <stdbool.h>
+#include <math.h>
 
-int main() 
+#define FPS 16 // in msec
+
+SDL_Window *win = NULL;
+SDL_Renderer *rend = NULL;
+int win_width = 640;
+int win_height = 480;
+
+
+void DeInit(int error) {
+	if (rend != NULL) SDL_DestroyRenderer(rend);
+	if (win != NULL) SDL_DestroyWindow(win);
+	SDL_Quit();
+	exit(error);
+} 
+
+void Init()
 {
-	puts("pupupu");
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+		printf("Init error: %s\n", SDL_GetError());
+		DeInit(1);
+	}
+
+	win = SDL_CreateWindow(
+		"Xex", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+		640, 480, SDL_WINDOW_RESIZABLE|SDL_WINDOW_SHOWN 
+	);
+
+	if (win == NULL) {
+		printf("Error in create win: %s\n", SDL_GetError());
+		DeInit(1);
+	}
+
+	rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
+	if (rend == NULL) {
+		printf("Error in create renderer: %s\n", SDL_GetError());
+		DeInit(1);
+	}
+}
+
+void MathToScreen(double x, double y, double scale, int *sx, int *sy) {
+	*sx = x * scale + win_width / 2;
+	*sy = win_height / 2 - y * scale;
+}	
+
+int main(int argc, char *argv[]) 
+{
+	Init();
+	
+	bool run = true;
+	bool rising = true;
+	int point_count = 3;
+	int radius = 100;
+	while (run) {
+		SDL_Point *points = (SDL_Point *) malloc(sizeof(SDL_Point) * (point_count + 1));
+		float alpha = 0;
+		for (int i = 0; i < point_count + 1; i++) {
+			alpha += M_PI * 2 / point_count;		
+			MathToScreen(radius * cos(alpha), radius * sin(alpha), 1.0, &points[i].x, &points[i].y); 
+		}
+
+		SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
+		SDL_RenderClear(rend);
+
+		SDL_SetRenderDrawColor(rend, 255, 0, 0, 255);
+		SDL_RenderDrawLines(rend, points, point_count + 1);
+		SDL_RenderPresent(rend);
+
+		free(points);
+		SDL_Delay(FPS * 2);
+		if (rising)
+			point_count++;
+		else
+			point_count--;
+
+		if (point_count > 20 || point_count < 4)
+			rising = !rising;
+	}
+
+	DeInit(0);
 	return 0;
 }
