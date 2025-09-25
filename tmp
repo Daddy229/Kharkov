@@ -8,23 +8,22 @@
 
 SDL_Window *win = NULL;
 SDL_Renderer *rend = NULL;
-SDL_Surface *kot, *scr;
 int win_width = 640;
 int win_height = 480;
 
 
-void deinit(int error) {
+void DeInit(int error) {
 	if (rend != NULL) SDL_DestroyRenderer(rend);
 	if (win != NULL) SDL_DestroyWindow(win);
 	SDL_Quit();
 	exit(error);
 } 
 
-void init()
+void Init()
 {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-		printf("init error: %s\n", SDL_GetError());
-		deinit(1);
+		printf("Init error: %s\n", SDL_GetError());
+		DeInit(1);
 	}
 
 	win = SDL_CreateWindow(
@@ -34,62 +33,57 @@ void init()
 
 	if (win == NULL) {
 		printf("Error in create win: %s\n", SDL_GetError());
-		deinit(1);
+		DeInit(1);
 	}
-	scr = SDL_GetWindowSurface(win);
 
 	rend = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
 	if (rend == NULL) {
 		printf("Error in create renderer: %s\n", SDL_GetError());
-		deinit(1);
+		DeInit(1);
 	}
 }
 
-int load(char *image_name) 
-{
-	kot = SDL_LoadBMP(image_name);
-
-	if (kot == NULL) {
-		printf("Cant load bmp: %s", SDL_GetError());
-		return 1;
-	}
-	return 0;	
-}
-
-void reg_keys();
-
-void math_to_screen(double x, double y, double scale, int *sx, int *sy) {
+void MathToScreen(double x, double y, double scale, int *sx, int *sy) {
 	*sx = x * scale + win_width / 2;
 	*sy = win_height / 2 - y * scale;
 }	
 
 int main(int argc, char *argv[]) 
 {
-	init();
+	Init();
 	
 	bool run = true;
 	bool rising = true;
 	int point_count = 3;
 	int radius = 100;
-
-	SDL_Event evnt;
-
 	while (run) {
-		while (SDL_PollEvent(&evnt) != 0) {
-			switch (evnt.type) {
-				case SDL_QUIT:
-					run = false;
-					break;
-				case SDL_KEYDOWN:
-					reg_keys();
-					break;
-				default:
-					break;
-			}
+
+		SDL_Point *points = (SDL_Point *) malloc(sizeof(SDL_Point) * (point_count + 1));
+		float alpha = 0;
+		for (int i = 0; i < point_count + 1; i++) {
+			alpha += M_PI * 2 / point_count;		
+			MathToScreen(radius * cos(alpha), radius * sin(alpha), 1.0, &points[i].x, &points[i].y); 
 		}
+
+		SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
+		SDL_RenderClear(rend);
+
+		SDL_SetRenderDrawColor(rend, 255, 0, 0, 255);
+		SDL_RenderDrawLines(rend, points, point_count + 1);
+		SDL_RenderPresent(rend);
+
+		free(points);
 		SDL_Delay(FPS * 2);
+		if (rising)
+			point_count++;
+		else
+			point_count--;
+
+		if (point_count > 20 || point_count < 4)
+			rising = !rising;
+
 	}
 
-	deinit(0);
+	DeInit(0);
 	return 0;
 }
