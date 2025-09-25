@@ -56,8 +56,23 @@ int load(char *image_name)
 	return 0;	
 }
 
-void reg_keys();
-
+void player_move(SDL_Event evnt, struct player) {
+	switch (evnt.key.keysym.sym) {
+		case SDLK_a:
+			return;
+		case SDL_s:
+			return;
+		case SDL_w:
+			return;
+		case SDL_d:
+			return;
+		case SDL_w:
+			return;
+		defaut:
+			return;
+	}
+}
+	
 void math_to_screen(double x, double y, double scale, int *sx, int *sy) {
 	*sx = x * scale + win_width / 2;
 	*sy = win_height / 2 - y * scale;
@@ -81,7 +96,7 @@ int main(int argc, char *argv[])
 					run = false;
 					break;
 				case SDL_KEYDOWN:
-					reg_keys();
+					player_move();
 					break;
 				default:
 					break;
